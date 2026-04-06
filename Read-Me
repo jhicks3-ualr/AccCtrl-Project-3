@@ -1,0 +1,55 @@
+ABAC File Encryption for Acc Control Class
+
+Using the RSA library, generate a public key, private (secret) key, and a set of attributes for each of the following users: Alice, Bob, Charlie, Daisy, and Emmy. Store this information in individual files named after each user, such as Alice_ca.txt, Bob_ca.txt, etc.
+
+Each file should follow this format:
+
+    First line: Public Key
+    Second line: Private Key
+    Third line: Attributes (e.g., Att1, Att2, Att5)
+Evaluation: Generate and save five certificate authority (CA) files, one for each user.
+
+The Admin uses the AES library to generate a symmetric secret key K. Then, the Admin requests the public keys of each group member—Alice, Bob, Charlie, Daisy, and Emmy—from the Certificate Authority (CA). Using each member’s RSA public key, the Admin encrypts the secret key K individually for each user and creates the following files:
+
+    Alice_sharekey.txt ← RSA.Encrypt(PublicKey_Alice, K)
+    Bob_sharekey.txt ← RSA.Encrypt(PublicKey_Bob, K)
+    Charlie_sharekey.txt ← RSA.Encrypt(PublicKey_Charlie, K)
+    Daisy_sharekey.txt ← RSA.Encrypt(PublicKey_Daisy, K)
+    Emmy_sharekey.txt ← RSA.Encrypt(PublicKey_Emmy, K)
+
+Each encrypted file is securely distributed to its corresponding group member. This process ensures that only the intended recipient can decrypt the shared secret key K using their private RSA key.
+
+Evaluation:
+
+Print out five share key files.
+
+Using the previously generated secret key K, the Admin encrypts a file named plaintext.txt into an encrypted version named plaintext.txt.enc. This encryption process includes an embedded access control policy, which specifies that access is granted only to users who satisfy the following condition:
+
+(Att1 AND Att2) OR (Att3 AND Att4 AND Att5)
+
+Evaluation
+
+Output
+
+    The encrypted data
+    The embedded access control policy
+
+Using AES, the five members attempts to decrypt the file plaintext.txt.enc to recover the original content. The decryption is successful only if the member’s attributes satisfy the embedded access control policy:
+
+Evaluation:
+
+Test Cases (30pts)
+
+  Input: Alice
+
+  Output: Satisfied!
+
+         K <- RSA.Decryption(Secret Key of Alice, Alice_sharekey.txt)
+
+         Content <- AES.Decryption (K, plaintext.txt.enc)
+
+         Output the content of the plaintext.txt
+
+  Input: Bob
+
+  Output: None
