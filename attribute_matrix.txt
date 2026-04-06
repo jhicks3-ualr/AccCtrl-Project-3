@@ -1,0 +1,5 @@
+subject: Alice, att_1: x, att_2: x, att_3: o, att_4: o, att_5: x
+subject: Bob, att_1: x, att_2: o, att_3: x, att_4: x, att_5: o
+subject: Charlie, att_1:ox, att_2: o, att_3: o, att_4: x, att_5: x
+subject: Daisy, att_1: x, att_2: x, att_3: o, att_4: o, att_5: o
+subject: Emmy, att_1: x, att_2: x, att_3: x, att_4: x, att_5: x
