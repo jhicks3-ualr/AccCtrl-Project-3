@@ -3,6 +3,7 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import base64
 import rsa
+from pathlib import Path
 
 def user_matrix():
     user_database = {}
@@ -27,14 +28,17 @@ def user_matrix():
 
 def rsa_key_file_creation():
     database = user_matrix()
+    rsa_folder = Path("RSA_Keys")
+    rsa_file_path = rsa_folder / user_file
     for username, attributes in database.items():
         (pubkey, privkey) = rsa.newkeys(1024)
         rsa_pub_b64 = base64.b64encode(pubkey.save_pkcs1()).decode('utf-8')
         rsa_priv_b64 = base64.b64encode(privkey.save_pkcs1()).decode('utf-8')
         user_attr_string = ", ".join([f"{key}: {value}" for key, value in attributes.items()])
         user_file = f"{username}_ca.txt"
+        rsa_file_path.mkdir(parents=True, exist_ok=True)
         try:
-            with open(user_file, 'w') as file:
+            with rsa_file_path.open(user_file, 'w') as file:
                 file.write(f"{rsa_pub_b64}\n")
                 file.write(f"{rsa_priv_b64}\n")
                 file.write(f"Attributes: {user_attr_string}\n")
