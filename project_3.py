@@ -29,16 +29,16 @@ def user_matrix():
 def rsa_key_file_creation():
     database = user_matrix()
     rsa_folder = Path("RSA_Keys")
-    rsa_file_path = rsa_folder / user_file
     for username, attributes in database.items():
         (pubkey, privkey) = rsa.newkeys(1024)
         rsa_pub_b64 = base64.b64encode(pubkey.save_pkcs1()).decode('utf-8')
         rsa_priv_b64 = base64.b64encode(privkey.save_pkcs1()).decode('utf-8')
         user_attr_string = ", ".join([f"{key}: {value}" for key, value in attributes.items()])
         user_file = f"{username}_ca.txt"
+        rsa_file_path = rsa_folder / user_file
         rsa_file_path.mkdir(parents=True, exist_ok=True)
         try:
-            with rsa_file_path.open(user_file, 'w') as file:
+            with rsa_file_path.open('w') as file:
                 file.write(f"{rsa_pub_b64}\n")
                 file.write(f"{rsa_priv_b64}\n")
                 file.write(f"Attributes: {user_attr_string}\n")
@@ -56,14 +56,20 @@ def aes_key_file_creation():
     for name in database.keys():
             user_ca_file = f"{name}_ca.txt"
             share_file = f"{name}_sharekey.txt"
+            aes_folder = Path("AES_Keys")
+            share_folder = Path("Share_Keys")
+            aes_file_path = aes_folder / user_ca_file
+            share_file_path = share_folder / share_file
+            aes_file_path.mkdir(parents=True, exist_ok=True)
+            share_file_path.mkdir(parents=True, exist_ok=True)
             try:
-                with open(user_ca_file, 'r') as ca_file:
+                with aes_file_path.open('r') as ca_file:
                     aes_pub_b64 = ca_file.readline().strip()
                 aes_pub_pem = base64.b64decode(aes_pub_b64)
                 aes_public_key = rsa.PublicKey.load_pkcs1(aes_pub_pem)
                 encrypted_k = rsa.encrypt(K, aes_public_key)
                 encoded_k = base64.b64encode(encrypted_k).decode('utf-8')
-                with open(share_file, 'w') as file:
+                with share_file_path.open('w') as file:
                     file.write(encoded_k)
                 print(f"AES Encrypted Share Key for: {name}")
             except FileNotFoundError:
