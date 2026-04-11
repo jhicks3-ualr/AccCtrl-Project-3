@@ -178,9 +178,9 @@ def file_decryption(K, username):
     condition2 = has_attr("attr3") and has_attr("attr4") and has_attr("attr5")
 
     if not (condition1 or condition2):
-        print(" Access DENIED for: {username}".center(120, '!'))
+        print(f" Access DENIED for: {username}".center(120, '!'))
         return
-    print(" Access GRANTED for: {username}".center(120, '='))
+    print(f" Access GRANTED for: {username}".center(120, '='))
 
     try: 
         with open('plaintext.txt.enc', 'rb') as enc_file:
@@ -193,7 +193,7 @@ def file_decryption(K, username):
         with open('plaintext.txt', 'wb') as dec_file:
             dec_file.write(decrypted_data)
         print("Decrypted data has been written to 'plaintext.txt'.")
-        print(f"Preview: {decrypted_data.decode('utf-8')[:30]}...")
+        print(f"Preview: {decrypted_data.decode('utf-8')[:1]}...")
         print("-" * 120)
 
     except FileNotFoundError:
@@ -208,12 +208,12 @@ def admin_menu(current_k):
         print("Please select an action:")
         print("1. RSA Key Generation.")
         print("2. Share Key Generation.")
-        print("3. File Encryption.")
+        print("3. Encrypt File.")
         print("4. Create New User.")        
         print("5. Log Out.")
         print("6. Exit")
         print("-" * 120)
-        choice = input("Please enter 1, 2, 3, 4, 5, 6 or 7: ")
+        choice = input("Please enter 1, 2, 3, 4, 5, or 6: ")
         match choice:
             case '1':
                 rsa_key_file_creation()
@@ -233,11 +233,11 @@ def admin_menu(current_k):
                 print("[TERMINATING SESSION]".center(120, '*'))
                 exit()
             case _:
-                print("Invalid selection. Please enter 1, 2, 3, 4, 5, 6 or 7.")
+                print("Invalid selection. Please enter 1, 2, 3, 4, 5, or 6.")
 
 def user_menu(username, K):
     while True:
-        print(" USER SESSION: {username} ".center(120,'-')) 
+        print(f" USER SESSION: {username} ".center(120,'-')) 
         print("Please select an action:")
         print("1. View File Content.")
         print("2. Log Out.")
@@ -282,8 +282,3 @@ def main():
 
 main()
 
-# # Assuming persistent_k is stored from Option 2
-# target_user = input("Enter your username to attempt decryption: ").strip()
-
-# # Pass the key and the name; the function handles the matrix lookup
-# file_decryption(persistent_k, target_user)
