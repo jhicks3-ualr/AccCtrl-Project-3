@@ -51,7 +51,34 @@ def add_new_user(current_k):
     print(f"User {input_new_user} successfully added.")
     print("-" * 120)
 
+    rsa_folder = Path("RSA_Keys")
+    rsa_folder.mkdir(parents=True, exist_ok=True)
+    rsa_file_path = rsa_folder / f"{input_new_user}_ca.txt"
+    (pubkey, privkey) = rsa.newkeys(1024)
+    rsa_pub_b64 = base64.b64encode(pubkey.save_pkcs1()).decode('utf-8')
+    rsa_priv_b64 = base64.b64encode(privkey.save_pkcs1()).decode('utf-8')
 
+    attr_string = ", ".join([f"{k}: {v}" for k, v in attr_dict.items()])
+
+    with rsa_file_path.open('w') as rsa_file:
+        rsa_file.write(f"{rsa_pub_b64}\n")
+        rsa_file.write(f"{rsa_priv_b64}\n")
+        rsa_file.write(f"Attributes: {attr_string}\n")
+    print(f"RSA Key File Generated for {input_new_user}")
+
+    if current_k:
+        share_folder = Path("Share_Keys")
+        share_folder.mkdir(parents=True, exist_ok=True)
+        share_file_path = share_folder / f"{input_new_user}_sharekey.txt"
+        encrypted_k = rsa.encrypt(current_k, pubkey)
+        encoded_k = base64.b64encode(encrypted_k).decode('utf-8')
+        with share_file_path.open('w') as s_file:
+            s_file.write(encoded_k)
+        print(f"Share Key File Generated for {input_new_user}.")
+    else:
+        print("No Active AES Key Found. Share key not generated.")
+
+    print("-" * 120)
 
 
 
