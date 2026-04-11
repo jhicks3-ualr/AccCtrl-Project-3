@@ -43,23 +43,19 @@ def add_new_user(current_k):
                     break
                 case _:
                     print("Invalid entry: Please enter 'x' or 'o': ")
-
     new_line_entry = f"subject: {input_new_user}, " + ", ".join(attributes) 
     with open('user_matrix.txt', 'a+') as file:
         file.seek(0, 2)
         file.write(new_line_entry + "\n")
     print(f"User {input_new_user} successfully added.")
     print("-" * 120)
-
     rsa_folder = Path("RSA_Keys")
     rsa_folder.mkdir(parents=True, exist_ok=True)
     rsa_file_path = rsa_folder / f"{input_new_user}_ca.txt"
     (pubkey, privkey) = rsa.newkeys(1024)
     rsa_pub_b64 = base64.b64encode(pubkey.save_pkcs1()).decode('utf-8')
     rsa_priv_b64 = base64.b64encode(privkey.save_pkcs1()).decode('utf-8')
-
     attr_string = ", ".join([f"{k}: {v}" for k, v in attr_dict.items()])
-
     with rsa_file_path.open('w') as rsa_file:
         rsa_file.write(f"{rsa_pub_b64}\n")
         rsa_file.write(f"{rsa_priv_b64}\n")
@@ -77,11 +73,7 @@ def add_new_user(current_k):
         print(f"Share Key File Generated for {input_new_user}.")
     else:
         print("No Active AES Key Found. Share key not generated.")
-
     print("-" * 120)
-
-
-
 
 def rsa_key_file_creation():
     database = user_matrix()
@@ -94,7 +86,6 @@ def rsa_key_file_creation():
         user_attr_string = ", ".join([f"{key}: {value}" for key, value in attributes.items()])
         user_file = f"{username}_ca.txt"
         rsa_file_path = rsa_folder / user_file
-
         try:
             with rsa_file_path.open('w') as file:
                 file.write(f"{rsa_pub_b64}\n")
@@ -112,17 +103,13 @@ def aes_key_file_creation():
     K = Random.new().read(32)
     print(f" Admin Generated Symmetric Key ".center(120, '-'))
     rsa_folder = Path("RSA_Keys")
-
     share_folder = Path("Share_Keys")
-
     share_folder.mkdir(parents=True, exist_ok=True)
     for name in database.keys():
             user_ca_file = f"{name}_ca.txt"
             share_file = f"{name}_sharekey.txt"
-
             rsa_file_path = rsa_folder / user_ca_file
             share_file_path = share_folder / share_file
-
             try:
                 with rsa_file_path.open('r') as ca_file:
                     aes_pub_b64 = ca_file.readline().strip()
@@ -148,20 +135,14 @@ def file_encryption(K):
     try:
         with open('plaintext.txt', 'rb') as file:
             pt_file = file.read()
-        
         iv = Random.new().read(aes_padding)
-
         aes_cipher = AES.new(K, AES.MODE_CBC, iv)
-
         aes_cipher_text = aes_cipher.encrypt(pad(pt_file, aes_padding))
-
         with open('plaintext.txt.enc', 'wb') as enc_file:
             enc_file.write(f"ABAC Policy: {abac_policy}\n".encode('utf-8'))
             enc_file.write(base64.b64encode(iv) + b"\n")
             enc_file.write(base64.b64encode(aes_cipher_text))
-
         print("Successfully encrypted file.")
-        
     except FileNotFoundError:
         print(f"Error: 'plaintext.txt' not found.")
     except Exception as e:
@@ -176,12 +157,10 @@ def file_decryption(K, username):
     has_attr = lambda a: user_attributes.get(a) == 'x'
     condition1 = has_attr("attr1") and has_attr("attr2")
     condition2 = has_attr("attr3") and has_attr("attr4") and has_attr("attr5")
-
     if not (condition1 or condition2):
-        print(f" Access DENIED for: {username}".center(120, '!'))
+        print(f" Access DENIED for: {username} ".center(120, '!'))
         return
-    print(f" Access GRANTED for: {username}".center(120, '='))
-
+    print(f" Access GRANTED for: {username} ".center(120, '='))
     try: 
         with open('plaintext.txt.enc', 'rb') as enc_file:
             lines = enc_file.readlines()
@@ -189,13 +168,11 @@ def file_decryption(K, username):
             ciphertext = base64.b64decode(lines[2].strip())
         aes_cipher = AES.new(K, AES.MODE_CBC, iv)
         decrypted_data = unpad(aes_cipher.decrypt(ciphertext), 16)
-
         with open('plaintext.txt', 'wb') as dec_file:
             dec_file.write(decrypted_data)
         print("Decrypted data has been written to 'plaintext.txt'.")
-        print(f"Preview: {decrypted_data.decode('utf-8')[:1]}...")
+        print(f"Preview: {decrypted_data.decode('utf-8')[:30]}...")
         print("-" * 120)
-
     except FileNotFoundError:
         print("Error: 'plaintext.txt.enc' not found.")
     except Exception as e:
@@ -209,7 +186,7 @@ def admin_menu(current_k):
         print("1. RSA Key Generation.")
         print("2. Share Key Generation.")
         print("3. Encrypt File.")
-        print("4. Create New User.")        
+        print("4. Create and Encrypt New User.")        
         print("5. Log Out.")
         print("6. Exit")
         print("-" * 120)
@@ -230,7 +207,7 @@ def admin_menu(current_k):
                 print("Signing Out.")
                 return persistent_k
             case '6':
-                print("[TERMINATING SESSION]".center(120, '*'))
+                print(" [TERMINATING SESSION] ".center(120, '*'))
                 exit()
             case _:
                 print("Invalid selection. Please enter 1, 2, 3, 4, 5, or 6.")
