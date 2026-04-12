@@ -3,5 +3,4 @@ subject: Bob, attr1: x, attr2: o, attr3: x, attr4: x, attr5: o
 subject: Charlie, attr1: o, attr2: o, attr3: o, attr4: x, attr5: x
 subject: Daisy, attr1: x, attr2: x, attr3: o, attr4: o, attr5: o
 subject: Emmy, attr1: x, attr2: x, attr3: x, attr4: x, attr5: x
-
-
+subject: James, attr1: x, attr2: x, attr3: x, attr4: x, attr5: x

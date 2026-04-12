@@ -221,12 +221,12 @@ def file_encryption(K):
             enc_file.write(f"ABAC Policy: {abac_policy}\n".encode('utf-8'))
             enc_file.write(base64.b64encode(iv) + b"\n")
             enc_file.write(base64.b64encode(aes_cipher_text))
-        print("Successfully encrypted file.")
     except FileNotFoundError:
         print(f"Error: 'plaintext.txt' not found.")
     except Exception as e:
         print(f"Encryption failed: {e}")
-    print("-" * 100)    
+    print("-" * 100)
+    print("Successfully encrypted file.")        
     pause()
 
 def file_decryption(K, username):
