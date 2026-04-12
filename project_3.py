@@ -4,6 +4,7 @@ from Crypto.Util.Padding import pad, unpad
 import base64
 import rsa
 from pathlib import Path
+import bcrypt
 
 def user_matrix():
     user_database = {}
@@ -343,25 +344,43 @@ def pause():
 
 def main():
     K = None
+    max_attempts = 3
     while True:
+        admin_pw = "root".encode('utf-8')
+        user_pw = "password".encode('utf-8')
+        salt = bcrypt.gensalt(rounds = 12)
+        hashed_admin = bcrypt.hashpw(admin_pw, salt)
+        hashed_user = bcrypt.hashpw(user_pw, salt)
         database = user_matrix()
         username_entry = input("Enter 'admin' for Admin Menu | Enter a valid Username for the Standard User Menu | Enter 'q' to Quit:\n").strip()
         match username_entry:
             case 'admin':
-                admin_pw = input("Admin Password:\n").strip()
-                if admin_pw == "root":
-                    print(f" [ADMIN ACCESS GRANTED] ".center(100, '*'))
-                    K = admin_menu(K)
-                else:
-                    print("Incorrect Password. Please Try again.")
+                for attempt in range(max_attempts):
+                    entered_admin_pw = input(f"Admin Password:\n").strip().encode('utf-8')
+                    if bcrypt.checkpw(entered_admin_pw, hashed_admin):
+                        print(f" [ADMIN ACCESS GRANTED] ".center(100, '*'))
+                        K = admin_menu(K)
+                        break
+                    else:
+                        remaining = max_attempts - (attempt + 1)
+                        if remaining > 0:
+                            print(f"Incorrect Password. {remaining} attempts remaining.")
+                        else:
+                            print("Too many failed attempts. Returning to Main Menu.")
             case _ if username_entry in database:
-                user_pw = input("Please enter your password.\n").strip()
-                if user_pw == 'password':
-                    print(f" [USER ACCESS GRANTED: {username_entry}] ".center(100, '*'))
-                    print('-' * 100)                
-                    user_menu(username_entry, K)
-                else:
-                    print("Incorrect Password. Try again.")
+                for attempt in range(max_attempts):
+                    entered_user_pw = input(f"Please enter your password:\n").strip().encode('utf-8')
+                    if bcrypt.checkpw(entered_user_pw, hashed_user):
+                        print(f" [USER ACCESS GRANTED: {username_entry}] ".center(100, '*'))
+                        print('-' * 100)                
+                        user_menu(username_entry, K)
+                        break
+                    else:
+                        remaining = max_attempts - (attempt + 1)
+                        if remaining > 0:
+                            print(f"Incorrect Password. {remaining} attempts remaining.")
+                        else:
+                            print("Too many failed attempts. Returning to Main Menu.")
             case 'q':
                 print(f" [TERMINATING SESSION] ".center(100, "*"))
                 exit()
