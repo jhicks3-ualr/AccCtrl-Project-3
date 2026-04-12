@@ -26,9 +26,21 @@ def user_matrix():
         print("Error. File not found.")
     return user_database
 
+def view_database():
+    print(" [USER DATABASE] ".center(100, '-'))
+    try:
+        with open('user_matrix.txt', 'r') as file:
+            for line in file:
+                if line.strip():
+                    print(line.strip())
+    except FileNotFoundError:
+        print("Database file not found.")
+    print('-' * 100)
+    pause()
+
 def add_new_user(current_k):
-    print(" ADDING NEW USER ".center(120,'-'))
-    input_new_user = input("Please enter the name of the new user:\n").strip()
+    print(" ADDING NEW USER ".center(100,'-'))
+    input_new_user = input("Please enter the name of the new user: ").strip()
     print("Attribute options: x = has attribute | o = does not have attribute.")
     attr_options = ['x', 'o']
     attributes = []
@@ -43,12 +55,13 @@ def add_new_user(current_k):
                     break
                 case _:
                     print("Invalid entry: Please enter 'x' or 'o': ")
-    new_line_entry = f"subject: {input_new_user}, " + ", ".join(attributes) 
-    with open('user_matrix.txt', 'a+') as file:
-        file.seek(0, 2)
-        file.write(new_line_entry + "\n")
-    print(f"User {input_new_user} successfully added.")
-    print("-" * 120)
+    new_line_entry = f"subject: {input_new_user}, " + ", ".join(attributes) + "\n"
+    with open('user_matrix.txt', 'r') as file:
+        lines = [line for line in file if line.strip()]
+    lines.append(new_line_entry)
+    with open('user_matrix.txt', 'w') as file:
+        file.writelines(lines)
+    print("-" * 100)
     rsa_folder = Path("RSA_Keys")
     rsa_folder.mkdir(parents=True, exist_ok=True)
     rsa_file_path = rsa_folder / f"{input_new_user}_ca.txt"
@@ -60,8 +73,6 @@ def add_new_user(current_k):
         rsa_file.write(f"{rsa_pub_b64}\n")
         rsa_file.write(f"{rsa_priv_b64}\n")
         rsa_file.write(f"Attributes: {attr_string}\n")
-    print(f"RSA Key File Generated for {input_new_user}")
-
     if current_k:
         share_folder = Path("Share_Keys")
         share_folder.mkdir(parents=True, exist_ok=True)
@@ -70,15 +81,80 @@ def add_new_user(current_k):
         encoded_k = base64.b64encode(encrypted_k).decode('utf-8')
         with share_file_path.open('w') as s_file:
             s_file.write(encoded_k)
-        print(f"Share Key File Generated for {input_new_user}.")
     else:
         print("No Active AES Key Found. Share key not generated.")
-    print("-" * 120)
+    print(f"User {input_new_user} as been added to the Database, and their RSA Key and Share Key files have been created.")
+    print("-" * 100)
+    pause()
 
+def edit_user_attributes():
+    print(" EDITING USER PERMISSIONS ".center(100,'-'))
+    database = user_matrix()
+    print("Attribute options: x = has attribute | o = does not have attribute.")
+    attr_options = ['x', 'o']
+    attributes = []
+    attr_dict = {}
+    rsa_folder = Path("RSA_Keys")
+    rsa_folder.mkdir(parents=True, exist_ok=True)
+    while True:
+        selected_user = input("Please enter the name of the User you would like to edit or type 'cancel' to return to the Admin Menu: ").strip()
+        match selected_user:
+            case 'cancel':
+                return
+            case _ if selected_user in database:
+                break
+            case _:
+                print(f"{selected_user} not found in User Database.")
+    for i in range(1,6):
+        while True:
+            new_attr = input(f"Enter selection for Attribute {i} (i.e. 'x' or 'o'): ").strip().lower()
+            match new_attr:
+                case _ if new_attr in attr_options:
+                    attributes.append(f"attr{i}: {new_attr}")
+                    attr_dict[f"attr{i}"] = new_attr
+                    break
+                case _:
+                    print("Invalid entry: Please enter 'x' or 'o': ")
+    new_attr_line = f"subject: {selected_user}, " + ", ".join(attributes) + "\n"
+    try:
+        with open ('user_matrix.txt', 'r') as file:
+            lines = file.readlines()
+        updated_file_line = []
+        user_found = False
+        for line in lines:
+            if line.startswith(f"subject: {selected_user},"):
+                updated_file_line.append(new_attr_line)
+                user_found = True
+            else:
+                updated_file_line.append(line)
+        if user_found:
+            with open ('user_matrix.txt', 'w') as file:
+                file.writelines(updated_file_line)
+            rsa_path = Path("RSA_Keys") / f"{selected_user}_ca.txt"
+            if rsa_path.exists():
+                with open(rsa_path, 'r') as file:
+                    lines = file.readlines()
+                pub_key = lines[0].strip()
+                priv_key = lines[1].strip()
+                updated_ca_file_line = ", ".join([f"{k}: {v}" for k, v in attr_dict.items()])
+                with open(rsa_path, 'w') as ca_file:
+                    ca_file.write(f"{pub_key}\n")
+                    ca_file.write(f"{priv_key}\n")
+                    ca_file.write(f"Attributes: {updated_ca_file_line}\n")
+            else:
+                print(f"RSA File for {selected_user} does not exist.")
+    except Exception as e:
+        print(f"There was an error writing {e}.")
+        print("-" * 100)
+    print(f"User Database and RSA Key File for {selected_user} have been updated with the users new permissions.")
+    print("-" * 100)
+    pause()
+    
 def rsa_key_file_creation():
     database = user_matrix()
     rsa_folder = Path("RSA_Keys")
     rsa_folder.mkdir(parents=True, exist_ok=True)
+    print(f" [RSA KEY FILE CREATION] ".center(100, '-'))
     for username, attributes in database.items():
         (pubkey, privkey) = rsa.newkeys(1024)
         rsa_pub_b64 = base64.b64encode(pubkey.save_pkcs1()).decode('utf-8')
@@ -91,9 +167,11 @@ def rsa_key_file_creation():
                 file.write(f"{rsa_pub_b64}\n")
                 file.write(f"{rsa_priv_b64}\n")
                 file.write(f"Attributes: {user_attr_string}\n")
-            print(f"User Key File Created: {user_file}")
+            print(f"RSA Key File {user_file} has been created.")
         except IOError as e:
             print(f"Error writing {user_file}: {e}")
+    print("-" * 100)        
+    pause()
 
 def aes_key_file_creation():
     database = user_matrix()
@@ -101,7 +179,7 @@ def aes_key_file_creation():
         print("No user database found. Please run RSA Key Generation first.")
         return
     K = Random.new().read(32)
-    print(f" Admin Generated Symmetric Key ".center(120, '-'))
+    print(f" [SHARE KEY FILE CREATION] ".center(100, '-'))
     rsa_folder = Path("RSA_Keys")
     share_folder = Path("Share_Keys")
     share_folder.mkdir(parents=True, exist_ok=True)
@@ -121,12 +199,13 @@ def aes_key_file_creation():
                 encoded_k = base64.b64encode(encrypted_k).decode('utf-8')
                 with share_file_path.open('w') as file:
                     file.write(encoded_k)
-                print(f"AES Encrypted Share Key for: {name}")
+                print(f"AES Encrypted Share Key file for {name} has been created.")
             except FileNotFoundError:
                 print(f"{rsa_file_path} not found. Generate RSA keys first.")
             except Exception as e:
                 print(f"Failed to create Share key for {name}; {e}")
-    print("-" * 120)
+    print("-" * 100)
+    pause()
     return K
 
 def file_encryption(K):
@@ -147,6 +226,8 @@ def file_encryption(K):
         print(f"Error: 'plaintext.txt' not found.")
     except Exception as e:
         print(f"Encryption failed: {e}")
+    print("-" * 100)    
+    pause()
 
 def file_decryption(K, username):
     database = user_matrix()
@@ -158,9 +239,9 @@ def file_decryption(K, username):
     condition1 = has_attr("attr1") and has_attr("attr2")
     condition2 = has_attr("attr3") and has_attr("attr4") and has_attr("attr5")
     if not (condition1 or condition2):
-        print(f" Access DENIED for: {username} ".center(120, '!'))
+        print(f" Access DENIED for: {username} ".center(100, '!'))
         return
-    print(f" Access GRANTED for: {username} ".center(120, '='))
+    print(f" Access GRANTED for: {username} ".center(100, '='))
     try: 
         with open('plaintext.txt.enc', 'rb') as enc_file:
             lines = enc_file.readlines()
@@ -172,25 +253,28 @@ def file_decryption(K, username):
             dec_file.write(decrypted_data)
         print("Decrypted data has been written to 'plaintext.txt'.")
         print(f"Preview: {decrypted_data.decode('utf-8')[:30]}...")
-        print("-" * 120)
+        print("-" * 100)
     except FileNotFoundError:
         print("Error: 'plaintext.txt.enc' not found.")
     except Exception as e:
         print(f"Decryption or Write failed: {e}")
+    pause()
         
 def admin_menu(current_k):
     persistent_k = current_k
     while True:
-        print(" ADMIN SESSION ".center(120,'-')) 
+        print(" [ADMIN SESSION] ".center(100,'-')) 
         print("Please select an action:")
         print("1. RSA Key Generation.")
         print("2. Share Key Generation.")
         print("3. Encrypt File.")
-        print("4. Create and Encrypt New User.")        
-        print("5. Log Out.")
-        print("6. Exit")
-        print("-" * 120)
-        choice = input("Please enter 1, 2, 3, 4, 5, or 6: ")
+        print("4. Create and Encrypt New User.")
+        print("5. Edit Existing User Attributes.")
+        print("6. View User Database.")        
+        print("7. Log Out.")
+        print("8. Exit")
+        print("-" * 100)
+        choice = input("Please enter 1, 2, 3, 4, 5, 6, 7, or 8: ")
         match choice:
             case '1':
                 rsa_key_file_creation()
@@ -204,55 +288,82 @@ def admin_menu(current_k):
             case '4':
                 add_new_user(persistent_k)
             case '5':
-                print("Signing Out.")
-                return persistent_k
+                edit_user_attributes()
             case '6':
-                print(" [TERMINATING SESSION] ".center(120, '*'))
+                view_database()
+            case '7':
+                print(f" [LOGGING OUT...] ".center(100, '-'))
+                return persistent_k
+            case '8':
+                print(" [TERMINATING SESSION] ".center(100, '*'))
                 exit()
             case _:
-                print("Invalid selection. Please enter 1, 2, 3, 4, 5, or 6.")
+                print("Invalid selection. Please enter 1, 2, 3, 4, 5, 6, 7, or 8.")
 
 def user_menu(username, K):
     while True:
-        print(f" USER SESSION: {username} ".center(120,'-')) 
+        print(f" [USER SESSION: {username}] ".center(100,'-')) 
         print("Please select an action:")
         print("1. View File Content.")
         print("2. Log Out.")
         print("3. Exit")
-        print("-" * 120)
+        print("-" * 100)
         choice = input("Please enter 1, 2, or 3: ")
         match choice:
             case '1':
                 if K is not None:
-                    file_decryption(K, username) 
+                    with open(f'RSA_Keys/{username}_ca.txt', 'r') as file:
+                              lines = file.readlines()
+                              priv_key_data = base64.b64decode(lines[1])
+                              private_key = rsa.PrivateKey.load_pkcs1(priv_key_data)
+                    with open(f'Share_Keys/{username}_sharekey.txt', 'r') as file:
+                        encrypted_k = base64.b64decode(file.read())
+                        try:
+                            decrypted_k = rsa.decrypt(encrypted_k, private_key)
+                            file_decryption(decrypted_k, username)
+                        except rsa.DecryptionError:
+                            print("RSA Key does not match, decryption failed.")
+                        except FileNotFoundError:
+                            print(f"Missing RSA and Share Key files for {username}") 
+                        except Exception as e:
+                            print(f"An error has occured: {e}")
                 else:
                     print("Error No AES Key found, please run AES Key Generation first.")
             case '2':
-                print("Signing Out.")
+                print("Signing Out...")
                 break
             case '3':
-                print("[TERMINATING SESSION]".center(120, '*'))
+                print("[TERMINATING SESSION]".center(100, '*'))
                 exit()
             case _:
                 print("!!Invalid Entry!! Please enter 1, 2, or 3: ")
 
+def pause():
+    input("Press Enter to Continue...")
 
 def main():
-    database = user_matrix()
     K = None
     while True:
-        username_entry = input("Enter 'admin' for Admin Menu | Enter a User Name from the Database | Enter 'exit' to Exit: ").strip()
+        database = user_matrix()
+        username_entry = input("Enter 'admin' for Admin Menu | Enter a valid Username for the Standard User Menu | Enter 'q' to Quit:\n").strip()
         match username_entry:
             case 'admin':
-                print(f" [ADMIN ACCESS GRANTED] ".center(120, '*'))
-                print('-' * 120)                
-                K = admin_menu(K)
+                admin_pw = input("Admin Password:\n").strip()
+                if admin_pw == "root":
+                    print(f" [ADMIN ACCESS GRANTED] ".center(100, '*'))
+                    K = admin_menu(K)
+                else:
+                    print("Incorrect Password. Please Try again.")
             case _ if username_entry in database:
-                print(f" [USER ACCESS GRANTED: {username_entry}] ".center(120, '*'))
-                print('-' * 120)                
-                user_menu(username_entry, K)
-            case 'exit':
-                print(f" [TERMINATING SESSION] ".center(120, "*"))
+                user_pw = input("Please enter your password.\n").strip()
+                if user_pw == 'password':
+                    print(f" [USER ACCESS GRANTED: {username_entry}] ".center(100, '*'))
+                    print('-' * 100)                
+                    user_menu(username_entry, K)
+                else:
+                    print("Incorrect Password. Try again.")
+            case 'q':
+                print(f" [TERMINATING SESSION] ".center(100, "*"))
                 exit()
             case _:
                 print("Invalid entry. Please enter 'admin' or 'exit'")
