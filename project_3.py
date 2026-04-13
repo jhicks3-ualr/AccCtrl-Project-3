@@ -5,6 +5,7 @@ import base64
 import rsa
 from pathlib import Path
 import bcrypt
+import os
 
 def user_matrix():
     user_database = {}
@@ -41,7 +42,13 @@ def view_database():
 
 def add_new_user(current_k):
     print(" ADDING NEW USER ".center(100,'-'))
-    input_new_user = input("Please enter the name of the new user: ").strip()
+    while True:
+        input_new_user = input("Please enter a new Username or type 'cancel' to return to the previous menu:\n").strip()
+        match input_new_user:
+            case 'cancel':
+                return
+            case _:
+                break
     print("Attribute options: x = has attribute | o = does not have attribute.")
     attr_options = ['x', 'o']
     attributes = []
@@ -98,7 +105,7 @@ def edit_user_attributes():
     rsa_folder = Path("RSA_Keys")
     rsa_folder.mkdir(parents=True, exist_ok=True)
     while True:
-        selected_user = input("Please enter the name of the User you would like to edit or type 'cancel' to return to the Admin Menu: ").strip()
+        selected_user = input("Please enter a Username or type 'cancel' to return to the Admin Menu:\n").strip()
         match selected_user:
             case 'cancel':
                 return
@@ -212,26 +219,33 @@ def aes_key_file_creation():
 def file_encryption(K):
     abac_policy = "(attr1 AND attr2) OR (attr3 AND attr4 AND attr5)"
     aes_padding = 16
+    input_file = 'plaintext.txt'
+    output_file = 'plaintext.txt.enc'
     try:
-        with open('plaintext.txt', 'rb') as file:
+        with open(input_file, 'rb') as file:
             pt_file = file.read()
         iv = Random.new().read(aes_padding)
         aes_cipher = AES.new(K, AES.MODE_CBC, iv)
         aes_cipher_text = aes_cipher.encrypt(pad(pt_file, aes_padding))
-        with open('plaintext.txt.enc', 'wb') as enc_file:
+        with open(output_file, 'wb') as enc_file:
             enc_file.write(f"ABAC Policy: {abac_policy}\n".encode('utf-8'))
             enc_file.write(base64.b64encode(iv) + b"\n")
             enc_file.write(base64.b64encode(aes_cipher_text))
+        os.remove(input_file)
+        print("-" * 100)
+        print("Successfully encrypted 'plaintext.txt'.") 
+        print("-" * 100)
     except FileNotFoundError:
         print(f"Error: 'plaintext.txt' not found.")
     except Exception as e:
         print(f"Encryption failed: {e}")
-    print("-" * 100)
-    print("Successfully encrypted file.")        
+       
     pause()
 
 def file_decryption(K, username):
     database = user_matrix()
+    input_file = 'plaintext.txt.enc'
+    output_file = 'plaintext.txt'
     if username not in database:
         print(f"User {username} not found.")
         return
@@ -244,17 +258,22 @@ def file_decryption(K, username):
         return
     print(f" Access GRANTED for: {username} ".center(100, '='))
     try: 
-        with open('plaintext.txt.enc', 'rb') as enc_file:
+        with open(input_file, 'rb') as enc_file:
             lines = enc_file.readlines()
             iv = base64.b64decode(lines[1].strip())
             ciphertext = base64.b64decode(lines[2].strip())
         aes_cipher = AES.new(K, AES.MODE_CBC, iv)
         decrypted_data = unpad(aes_cipher.decrypt(ciphertext), 16)
-        with open('plaintext.txt', 'wb') as dec_file:
+        with open(output_file, 'wb') as dec_file:
             dec_file.write(decrypted_data)
-        print("Decrypted data has been written to 'plaintext.txt'.")
-        print(f"Preview: {decrypted_data.decode('utf-8')[:30]}...")
+        print("You have successfully decrypted 'plaintext.txt.enc'.")
+        print(f"Preview: {decrypted_data.decode('utf-8')[:75]}...")
         print("-" * 100)
+        pause()
+        if os.path.exists(output_file):
+            os.remove(output_file)
+            print(f" [Exiting: File has been re-encrypted.] ".center(100, '-'))
+            print('*' * 100)
     except FileNotFoundError:
         print("Error: 'plaintext.txt.enc' not found.")
     except Exception as e:
