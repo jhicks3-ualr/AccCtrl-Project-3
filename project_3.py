@@ -232,7 +232,7 @@ def file_encryption(K):
             enc_file.write(base64.b64encode(iv) + b"\n")
             enc_file.write(base64.b64encode(aes_cipher_text))
         os.remove(input_file)
-        print("-" * 100)
+        print(f" [FILE ENCRYPTION] ".center(100, '-'))
         print("Successfully encrypted 'plaintext.txt'.") 
         print("-" * 100)
     except FileNotFoundError:
